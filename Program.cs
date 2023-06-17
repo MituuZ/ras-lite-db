@@ -6,7 +6,10 @@ namespace Application {
         public static void Main(string[] args) {
             Console.WriteLine("Hello, World!");
 
+            # Creates the database if it doesn't exist
             using(var db = new LiteDatabase(@"/home/mituuz/.liteDb")) {
+                
+                # Creates the collection if it doesn't exist
                 var collection = db.GetCollection<PetWeight>("petweights");
 
                 var petWeight = new PetWeight (
