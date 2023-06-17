@@ -1,0 +1,67 @@
+{
+  "format": 1,
+  "restore": {
+    "/home/mituuz/RasLiteDB/RasLiteDB.csproj": {}
+  },
+  "projects": {
+    "/home/mituuz/RasLiteDB/RasLiteDB.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "/home/mituuz/RasLiteDB/RasLiteDB.csproj",
+        "projectName": "RasLiteDB",
+        "projectPath": "/home/mituuz/RasLiteDB/RasLiteDB.csproj",
+        "packagesPath": "/home/mituuz/.nuget/packages/",
+        "outputPath": "/home/mituuz/RasLiteDB/obj/",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "/home/mituuz/.nuget/NuGet/NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "net6.0"
+        ],
+        "sources": {
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net6.0": {
+            "targetAlias": "net6.0",
+            "projectReferences": {}
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        }
+      },
+      "frameworks": {
+        "net6.0": {
+          "targetAlias": "net6.0",
+          "dependencies": {
+            "LiteDB": {
+              "target": "Package",
+              "version": "[5.0.16, )"
+            }
+          },
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "/home/mituuz/.dotnet/sdk/6.0.410/RuntimeIdentifierGraph.json"
+        }
+      }
+    }
+  }
+}

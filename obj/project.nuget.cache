@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "dgSpecHash": "NVyWkKNICtq3OVqCaxy+b/Ez6XuNuSinmZG5NKJeaPw0LSEBrkOSQb9nopkyobGHnnbEEqxovRm65gOlUO3AOA==",
+  "success": true,
+  "projectFilePath": "/home/mituuz/RasLiteDB/RasLiteDB.csproj",
+  "expectedPackageFiles": [
+    "/home/mituuz/.nuget/packages/litedb/5.0.16/litedb.5.0.16.nupkg.sha512"
+  ],
+  "logs": []
+}
