@@ -7,7 +7,7 @@ namespace Application {
             Console.WriteLine("Hello, World!");
 
             # Creates the database if it doesn't exist
-            using(var db = new LiteDatabase(@"/home/mituuz/.liteDb")) {
+            using(var db = new LiteDatabase(@"/home/<user>/.liteDb")) {
                 
                 # Creates the collection if it doesn't exist
                 var collection = db.GetCollection<PetWeight>("petweights");
