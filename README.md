@@ -1,2 +1,2 @@
 # ras-lite-db
-Setting up a LiteDB inside my Rasberry Pi
+Setting up a LiteDB inside a Rasberry Pi
