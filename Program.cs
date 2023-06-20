@@ -6,8 +6,16 @@ namespace Application {
         public static void Main(string[] args) {
             Console.WriteLine("Hello, World!");
 
+            // Gets env variable for current user
+            string user = Environment.GetEnvironmentVariable("USER");
+
+            if (user == null) {
+                Console.WriteLine("No env variable set. Set system environmental variable USER");
+                return;
+            }
+
             // Creates the database if it doesn't exist
-            using(var db = new LiteDatabase(@"/home/<user>/.liteDb")) {
+            using(var db = new LiteDatabase($@"/home/{user}/.liteDb")) {
                 
                 // Creates the collection if it doesn't exist
                 var collection = db.GetCollection<PetWeight>("petweights");
@@ -18,7 +26,7 @@ namespace Application {
                     DateTime.Now
                 );
 
-                collection.Insert(petWeight);
+                // collection.Insert(petWeight);
 
                 collection.EnsureIndex(x => x.Name);
 
