@@ -26,7 +26,7 @@ namespace Application {
                     DateTime.Now
                 );
 
-                // collection.Insert(petWeight);
+                collection.Insert(petWeight);
 
                 collection.EnsureIndex(x => x.Name);
 
