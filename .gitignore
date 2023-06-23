@@ -1,3 +1,4 @@
 bin/
 obj/
 *.save
+appsettings.Development.json
