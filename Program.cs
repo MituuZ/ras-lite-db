@@ -17,18 +17,15 @@ namespace Application {
             string? raspIp = configuration["RasLiteSettings:RaspIp"];
 
             if (raspIp == null) {
-                Console.WriteLine("No port defined in appsettings.json!");
+                Console.WriteLine("No IP defined in appsettings.json!");
                 return;
             }
-            SimpleHttpServer server = new SimpleHttpServer(raspIp);
-
-            await server.StartListeningAsync();
 
             // Creates the database if it doesn't exist
             using(var db = new LiteDatabase(dbPath)) {
-                
-                // Creates the collection if it doesn't exist
-                var collection = db.GetCollection<PetWeight>("petweights");
+                SimpleHttpServer server = new SimpleHttpServer(raspIp, db);
+
+                await server.StartListeningAsync();
             }
         }
     }
