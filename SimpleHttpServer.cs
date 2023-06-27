@@ -32,18 +32,28 @@ namespace HttpServer {
                 
                 var collection = db.GetCollection<PetWeight>("petweights");
 
+                HttpListenerResponse response = context.Response;
+
                 if (request.HttpMethod == "POST") {
-                    PetWeight? petWeight = System.Text.Json.JsonSerializer.Deserialize<PetWeight>(jsonBody);
+                    List<PetWeight>? petWeights = System.Text.Json.JsonSerializer.Deserialize<List<PetWeight>>(jsonBody);
 
-                    if (petWeight != null) {
-                        Console.WriteLine($"Got a request for db insert:");
-                        Console.WriteLine($"Name: {petWeight.Name}");
-                        Console.WriteLine($"Weight: {petWeight.Weight}");
-                        Console.WriteLine($"Date: {petWeight.Date}");
-                        
-                        collection.Insert(petWeight);
+                    if (petWeights != null) {
+                        responseString = "<html><body>";
 
-                        responseString = $"<html><body>Inserted {petWeight.Name} to the database</body></html>";
+                        foreach (var petWeight in petWeights) {
+                            if (petWeight != null) {
+                                Console.WriteLine($"Got a request for db insert:");
+                                Console.WriteLine($"Name: {petWeight.Name}");
+                                Console.WriteLine($"Weight: {petWeight.Weight}");
+                                Console.WriteLine($"Date: {petWeight.Date}");
+                                
+                                collection.Insert(petWeight);
+
+                                responseString += $"<html><body>Inserted {petWeight.Name} to the database</body></html>";
+                            }
+                        }
+
+                        responseString += "</body></html>";
                     }
                 } else if (request.HttpMethod == "GET") {
                     var allItems = collection.FindAll();
@@ -58,6 +68,13 @@ namespace HttpServer {
                     }
 
                     responseString += "</body></html>";
+                } else if (request.HttpMethod == "OPTIONS") {
+                    Console.WriteLine("Got an OPTIONS call");
+                    response.AddHeader("Access-Control-Allow-Origin", "*");
+                    response.AddHeader("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
+                    response.AddHeader("Access-Control-Allow-Headers", "Content-Type, Accept");
+                    response.StatusCode = 200;
+                    response.Close();
                 } else {
                     Console.WriteLine("Unhandled HTTP method!");
                     responseString = "<html><body>Unhandled HTTP method!</body></html>";
@@ -66,14 +83,14 @@ namespace HttpServer {
                 byte[] buffer = Encoding.UTF8.GetBytes(responseString);
 
                 // Get a response stream and write the response to it.
-                HttpListenerResponse response = context.Response;
-                Console.WriteLine($"Response: {response}");
-                response.ContentLength64 = buffer.Length;
-                System.IO.Stream output = response.OutputStream;
-                output.Write(buffer, 0, buffer.Length);
+                if (request.HttpMethod != "OPTIONS") {
+                    response.ContentLength64 = buffer.Length;
+                    System.IO.Stream output = response.OutputStream;
+                    output.Write(buffer, 0, buffer.Length);
 
-                // You must close the output stream.
-                output.Close();
+                    // You must close the output stream.
+                    output.Close();
+                }
             }
         }
 
