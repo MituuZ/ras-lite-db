@@ -2,3 +2,5 @@ bin/
 obj/
 *.save
 appsettings.Development.json
+README.me.md
+publish/

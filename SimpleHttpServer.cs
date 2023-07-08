@@ -35,6 +35,9 @@ namespace HttpServer {
                 HttpListenerResponse response = context.Response;
 
                 if (request.HttpMethod == "POST") {
+                    response.AddHeader("Access-Control-Allow-Origin", "*");
+                    response.AddHeader("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
+                    response.AddHeader("Access-Control-Allow-Headers", "Content-Type, Accept");
                     List<PetWeight>? petWeights = System.Text.Json.JsonSerializer.Deserialize<List<PetWeight>>(jsonBody);
 
                     if (petWeights != null) {
