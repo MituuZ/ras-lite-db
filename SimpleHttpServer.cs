@@ -60,17 +60,23 @@ namespace HttpServer {
                     }
                 } else if (request.HttpMethod == "GET") {
                     var allItems = collection.FindAll();
-                    responseString = "<html><body>";
+                    var petWeights = new List<PetWeight>();
 
                     foreach (PetWeight item in allItems)
                     {
-                        var petString = $"{item.Name} weighs {item.Weight} on date {item.Date}";
-                        Console.WriteLine(petString);
-                        responseString += petString;
-                        responseString += "\n";
+                        var petWeight = new PetWeight(item.Name, item.Weight, item.Date);
+
+                        petWeights.Add(petWeight);
                     }
 
-                    responseString += "</body></html>";
+                    var responseJson = System.Text.Json.JsonSerializer.Serialize(petWeights);
+                    response.ContentType = "application/json";
+                    response.StatusCode = 200;
+                    
+                    using (var streamWriter = new StreamWriter(response.OutputStream))
+                    {
+                        streamWriter.Write(responseJson);
+                    }
                 } else if (request.HttpMethod == "OPTIONS") {
                     Console.WriteLine("Got an OPTIONS call");
                     response.AddHeader("Access-Control-Allow-Origin", "*");
