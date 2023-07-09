@@ -35,9 +35,7 @@ namespace HttpServer {
                 HttpListenerResponse response = context.Response;
 
                 if (request.HttpMethod == "POST") {
-                    response.AddHeader("Access-Control-Allow-Origin", "*");
-                    response.AddHeader("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
-                    response.AddHeader("Access-Control-Allow-Headers", "Content-Type, Accept");
+                    AddCORSHeaders(response);
                     List<PetWeight>? petWeights = System.Text.Json.JsonSerializer.Deserialize<List<PetWeight>>(jsonBody);
 
                     if (petWeights != null) {
@@ -59,6 +57,8 @@ namespace HttpServer {
                         responseString += "</body></html>";
                     }
                 } else if (request.HttpMethod == "GET") {
+                    AddCORSHeaders(response);
+
                     var allItems = collection.FindAll();
                     var petWeights = new List<PetWeight>();
 
@@ -79,9 +79,8 @@ namespace HttpServer {
                     }
                 } else if (request.HttpMethod == "OPTIONS") {
                     Console.WriteLine("Got an OPTIONS call");
-                    response.AddHeader("Access-Control-Allow-Origin", "*");
-                    response.AddHeader("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
-                    response.AddHeader("Access-Control-Allow-Headers", "Content-Type, Accept");
+                    AddCORSHeaders(response);
+
                     response.StatusCode = 200;
                     response.Close();
                 } else {
@@ -101,6 +100,12 @@ namespace HttpServer {
                     output.Close();
                 }
             }
+        }
+
+        private void AddCORSHeaders(HttpListenerResponse response) {
+            response.AddHeader("Access-Control-Allow-Origin", "*");
+            response.AddHeader("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
+            response.AddHeader("Access-Control-Allow-Headers", "Content-Type, Accept");
         }
 
         public SimpleHttpServer(string _raspIp, LiteDatabase _db) {
