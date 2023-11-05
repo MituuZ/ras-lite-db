@@ -92,12 +92,17 @@ namespace HttpServer {
 
                 // Get a response stream and write the response to it.
                 if (request.HttpMethod != "OPTIONS") {
-                    response.ContentLength64 = buffer.Length;
-                    System.IO.Stream output = response.OutputStream;
-                    output.Write(buffer, 0, buffer.Length);
+                    try {
+                        response.ContentLength64 = buffer.Length;
+                        System.IO.Stream output = response.OutputStream;
+                        output.Write(buffer, 0, buffer.Length);
 
-                    // You must close the output stream.
-                    output.Close();
+                        // You must close the output stream.
+                        output.Close();
+                        Console.WriteLine("Writing a response out");
+                    } catch (ObjectDisposedException) {
+                        Console.WriteLine("Failed to write a response!");
+                    }
                 }
             }
         }

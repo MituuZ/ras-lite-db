@@ -1,0 +1,17 @@
+version: '3.8'
+services:
+  lite-db-controller:
+    image: mcr.microsoft.com/dotnet/sdk:6.0
+    network_mode: "host"
+    volumes:
+      - litedb_volume:/app
+    restart: always
+    working_dir: /app
+    command: dotnet run
+volumes:
+  litedb_volume:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./app

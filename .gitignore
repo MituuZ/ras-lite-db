@@ -1,6 +1,7 @@
-bin/
-obj/
+app/bin/
+app/obj/
 *.save
-appsettings.Development.json
+app/appsettings.Development.json
 README.me.md
-publish/
+app/publish/
+app/data/
