@@ -1,7 +1,7 @@
 app/bin/
 app/obj/
 *.save
-app/appsettings.Development.json
+app/appSettings.Development.json
 README.me.md
 app/publish/
 app/data/
