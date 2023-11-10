@@ -1,7 +1,6 @@
 using System.Net;
 using System.Text;
 using LiteDB;
-using Microsoft.Extensions.Primitives;
 using Models;
 
 namespace RasLiteDB {
@@ -9,6 +8,11 @@ namespace RasLiteDB {
     {
         private readonly string _raspIp;
         private readonly LiteDatabase _db;
+
+        public SimpleHttpServer(string raspIp, LiteDatabase db) {
+            _raspIp = raspIp;
+            _db = db;
+        }
 
         public async Task StartListeningAsync()
         {
@@ -25,95 +29,103 @@ namespace RasLiteDB {
                 HttpListenerContext context = await listener.GetContextAsync();
                 HttpListenerRequest request = context.Request;
                 var responseStringBuilder = new StringBuilder();
-
                 Stream body = request.InputStream;
                 var reader = new StreamReader(body, request.ContentEncoding);
-                string jsonBody = reader.ReadToEnd();
+                string jsonBody = await reader.ReadToEndAsync();
                 
                 var collection = _db.GetCollection<PetWeight>("petweights");
-
                 HttpListenerResponse response = context.Response;
 
-                if (request.HttpMethod == "POST") {
-                    AddCorsHeaders(response);
-                    List<PetWeight>? petWeights = null;
-                    try
-                    {
-                        petWeights = System.Text.Json.JsonSerializer.Deserialize<List<PetWeight>>(jsonBody);
-                    }
-                    catch (Exception e)
-                    {
-                        Console.WriteLine($"Failed to parse a JSON message: {e.Message}");
-                        responseStringBuilder.Append("Failed to parse JSON");
-                        response.StatusCode = 500;
-                    }
-
-                    if (petWeights != null)
-                    {
-                        
-
-                        foreach (var petWeight in petWeights)
-                        {
-                            if (petWeight is not { Weight: > 0 }) continue;
-                            
-                            Console.WriteLine("Got a request for db insert:");
-                            Console.WriteLine($"Name: {petWeight.Name}");
-                            Console.WriteLine($"Weight: {petWeight.Weight}");
-                            Console.WriteLine($"Date: {petWeight.Date}");
-                            
-                            collection.Insert(petWeight);
-                            responseStringBuilder.Append($"Inserted {petWeight.Name} to the database");
-                        }
-                    }
-                } else if (request.HttpMethod == "GET") {
-                    Console.WriteLine("Got a get request, returning PetWeights");
-                    AddCorsHeaders(response);
-
-                    var allItems = collection.FindAll();
-                    var petWeights = new List<PetWeight>();
-
-                    foreach (PetWeight item in allItems)
-                    {
-                        var petWeight = new PetWeight(item.Name, item.Weight, item.Date);
-
-                        petWeights.Add(petWeight);
-                    }
-
-                    string responseJson = System.Text.Json.JsonSerializer.Serialize(petWeights);
-                    response.ContentType = "application/json";
-                    response.StatusCode = 201;
-
-                    await using var streamWriter = new StreamWriter(response.OutputStream);
-                    await streamWriter.WriteAsync(responseJson);
-                } else if (request.HttpMethod == "OPTIONS") {
-                    Console.WriteLine("Got an OPTIONS call");
-                    AddCorsHeaders(response);
-
-                    response.StatusCode = 200;
-                    response.Close();
-                } else {
-                    Console.WriteLine("Unhandled HTTP method!");
-                    responseStringBuilder.Append("Unhandled HTTP method!");
+                switch (request.HttpMethod)
+                {
+                    case "POST":
+                        HandlePostRequest(response, collection, jsonBody, responseStringBuilder);
+                        break;
+                    case "GET":
+                        await HandleGetRequest(response, collection);
+                        break;
+                    case "OPTIONS":
+                        HandleOptionsRequest(response);
+                        break;
+                    default:
+                        Console.WriteLine("Unhandled HTTP method!");
+                        responseStringBuilder.Append("Unhandled HTTP method!");
+                        response.StatusCode = 400;
+                        break;
                 }
 
                 byte[] buffer = Encoding.UTF8.GetBytes(responseStringBuilder.ToString());
 
                 // Get a response stream and write the response to it.
-                if (request.HttpMethod != "OPTIONS") {
-                    try {
-                        response.ContentLength64 = buffer.Length;
-                        Stream output = response.OutputStream;
-                        await output.WriteAsync(buffer);
+                if (request.HttpMethod == "OPTIONS") continue;
+                
+                try {
+                    response.ContentLength64 = buffer.Length;
+                    Stream output = response.OutputStream;
+                    await output.WriteAsync(buffer);
 
-                        // You must close the output stream.
-                        output.Close();
-                        Console.WriteLine("Writing a response out");
-                    } catch (ObjectDisposedException) {
-                        Console.WriteLine("Failed to write a response!");
-                    } catch (InvalidOperationException) {
-                        Console.WriteLine("Failed to write a response!");
-                    }
+                    // You must close the output stream.
+                    output.Close();
+                    Console.WriteLine("Writing a response out");
+                } catch (ObjectDisposedException) {
+                    Console.WriteLine("Failed to write a response!");
+                } catch (InvalidOperationException) {
+                    Console.WriteLine("Failed to write a response!");
                 }
+            }
+        }
+
+        private async Task HandleGetRequest(HttpListenerResponse response, ILiteCollection<PetWeight> collection)
+        {
+            Console.WriteLine("Got a get request, returning PetWeights");
+            AddCorsHeaders(response);
+
+            var allItems = collection.FindAll();
+            var petWeights = allItems.Select(item => new PetWeight(item.Name, item.Weight, item.Date)).ToList();
+
+            string responseJson = System.Text.Json.JsonSerializer.Serialize(petWeights);
+            response.ContentType = "application/json";
+            response.StatusCode = 201;
+
+            await using var streamWriter = new StreamWriter(response.OutputStream);
+            await streamWriter.WriteAsync(responseJson);
+        }
+        
+        private void HandleOptionsRequest(HttpListenerResponse response)
+        {
+            Console.WriteLine("Got an OPTIONS call");
+            AddCorsHeaders(response);
+
+            response.StatusCode = 200;
+            response.Close();
+        }
+
+        private void HandlePostRequest(HttpListenerResponse response, ILiteCollection<PetWeight> collection, string jsonBody, StringBuilder responseStringBuilder)
+        {
+            AddCorsHeaders(response);
+            List<PetWeight>? petWeights = null;
+            try
+            {
+                petWeights = System.Text.Json.JsonSerializer.Deserialize<List<PetWeight>>(jsonBody);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"Failed to parse a JSON message: {e.Message}");
+                responseStringBuilder.Append("Failed to parse JSON");
+                response.StatusCode = 500;
+            }
+
+            if (petWeights == null) return;
+            
+            foreach (PetWeight petWeight in petWeights.Where(petWeight => petWeight is { Weight: > 0 }))
+            {
+                Console.WriteLine("Got a request for db insert:");
+                Console.WriteLine($"Name: {petWeight.Name}");
+                Console.WriteLine($"Weight: {petWeight.Weight}");
+                Console.WriteLine($"Date: {petWeight.Date}");
+                
+                collection.Insert(petWeight);
+                responseStringBuilder.Append($"Inserted {petWeight.Name} to the database");
             }
         }
 
@@ -121,11 +133,6 @@ namespace RasLiteDB {
             response.AddHeader("Access-Control-Allow-Origin", "*");
             response.AddHeader("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
             response.AddHeader("Access-Control-Allow-Headers", "Content-Type, Accept");
-        }
-
-        public SimpleHttpServer(string raspIp, LiteDatabase db) {
-            _raspIp = raspIp;
-            _db = db;
         }
     }
 }
