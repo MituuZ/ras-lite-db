@@ -1,8 +1,8 @@
 using System.Net;
 using System.Text;
 using LiteDB;
+using Microsoft.Extensions.Primitives;
 using Models;
-using System;
 
 namespace RasLiteDB {
     public class SimpleHttpServer
@@ -24,7 +24,8 @@ namespace RasLiteDB {
             {
                 HttpListenerContext context = await listener.GetContextAsync();
                 HttpListenerRequest request = context.Request;
-                var responseString = "<html><body>Hello World!</body></html>";
+                var responseStringBuilder = new StringBuilder();
+                responseStringBuilder.Append("<html><body>Hello World!</body></html>");
 
                 Stream body = request.InputStream;
                 var reader = new StreamReader(body, request.ContentEncoding);
@@ -38,8 +39,9 @@ namespace RasLiteDB {
                     AddCorsHeaders(response);
                     List<PetWeight>? petWeights = System.Text.Json.JsonSerializer.Deserialize<List<PetWeight>>(jsonBody);
 
-                    if (petWeights != null) {
-                        responseString = "<html><body>";
+                    if (petWeights != null)
+                    {
+                        responseStringBuilder.Append("<html><body>");
 
                         foreach (var petWeight in petWeights)
                         {
@@ -52,10 +54,11 @@ namespace RasLiteDB {
                             
                             collection.Insert(petWeight);
 
-                            responseString += $"<html><body>Inserted {petWeight.Name} to the database</body></html>";
+                            responseStringBuilder.Append(
+                                $"<html><body>Inserted {petWeight.Name} to the database</body></html>");
                         }
 
-                        responseString += "</body></html>";
+                        responseStringBuilder.Append("</body></html>");
                     }
                 } else if (request.HttpMethod == "GET") {
                     AddCorsHeaders(response);
@@ -84,10 +87,10 @@ namespace RasLiteDB {
                     response.Close();
                 } else {
                     Console.WriteLine("Unhandled HTTP method!");
-                    responseString = "<html><body>Unhandled HTTP method!</body></html>";
+                    responseStringBuilder.Append("<html><body>Unhandled HTTP method!</body></html>");
                 }
 
-                byte[] buffer = Encoding.UTF8.GetBytes(responseString);
+                byte[] buffer = Encoding.UTF8.GetBytes(responseStringBuilder.ToString());
 
                 // Get a response stream and write the response to it.
                 if (request.HttpMethod != "OPTIONS") {
