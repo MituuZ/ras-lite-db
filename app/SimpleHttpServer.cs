@@ -25,7 +25,6 @@ namespace RasLiteDB {
                 HttpListenerContext context = await listener.GetContextAsync();
                 HttpListenerRequest request = context.Request;
                 var responseStringBuilder = new StringBuilder();
-                responseStringBuilder.Append("<html><body>Hello World!</body></html>");
 
                 Stream body = request.InputStream;
                 var reader = new StreamReader(body, request.ContentEncoding);
@@ -37,11 +36,21 @@ namespace RasLiteDB {
 
                 if (request.HttpMethod == "POST") {
                     AddCorsHeaders(response);
-                    List<PetWeight>? petWeights = System.Text.Json.JsonSerializer.Deserialize<List<PetWeight>>(jsonBody);
+                    List<PetWeight>? petWeights = null;
+                    try
+                    {
+                        petWeights = System.Text.Json.JsonSerializer.Deserialize<List<PetWeight>>(jsonBody);
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine($"Failed to parse a JSON message: {e.Message}");
+                        responseStringBuilder.Append("Failed to parse JSON");
+                        response.StatusCode = 500;
+                    }
 
                     if (petWeights != null)
                     {
-                        responseStringBuilder.Append("<html><body>");
+                        
 
                         foreach (var petWeight in petWeights)
                         {
@@ -53,14 +62,11 @@ namespace RasLiteDB {
                             Console.WriteLine($"Date: {petWeight.Date}");
                             
                             collection.Insert(petWeight);
-
-                            responseStringBuilder.Append(
-                                $"<html><body>Inserted {petWeight.Name} to the database</body></html>");
+                            responseStringBuilder.Append($"Inserted {petWeight.Name} to the database");
                         }
-
-                        responseStringBuilder.Append("</body></html>");
                     }
                 } else if (request.HttpMethod == "GET") {
+                    Console.WriteLine("Got a get request, returning PetWeights");
                     AddCorsHeaders(response);
 
                     var allItems = collection.FindAll();
@@ -75,7 +81,7 @@ namespace RasLiteDB {
 
                     string responseJson = System.Text.Json.JsonSerializer.Serialize(petWeights);
                     response.ContentType = "application/json";
-                    response.StatusCode = 200;
+                    response.StatusCode = 201;
 
                     await using var streamWriter = new StreamWriter(response.OutputStream);
                     await streamWriter.WriteAsync(responseJson);
@@ -87,7 +93,7 @@ namespace RasLiteDB {
                     response.Close();
                 } else {
                     Console.WriteLine("Unhandled HTTP method!");
-                    responseStringBuilder.Append("<html><body>Unhandled HTTP method!</body></html>");
+                    responseStringBuilder.Append("Unhandled HTTP method!");
                 }
 
                 byte[] buffer = Encoding.UTF8.GetBytes(responseStringBuilder.ToString());
