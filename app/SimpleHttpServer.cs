@@ -2,6 +2,7 @@ using System.Net;
 using System.Text;
 using LiteDB;
 using Models;
+using System;
 
 namespace RasLiteDB {
     public class SimpleHttpServer
@@ -34,7 +35,7 @@ namespace RasLiteDB {
                 HttpListenerResponse response = context.Response;
 
                 if (request.HttpMethod == "POST") {
-                    AddCORSHeaders(response);
+                    AddCorsHeaders(response);
                     List<PetWeight>? petWeights = System.Text.Json.JsonSerializer.Deserialize<List<PetWeight>>(jsonBody);
 
                     if (petWeights != null) {
@@ -57,7 +58,7 @@ namespace RasLiteDB {
                         responseString += "</body></html>";
                     }
                 } else if (request.HttpMethod == "GET") {
-                    AddCORSHeaders(response);
+                    AddCorsHeaders(response);
 
                     var allItems = collection.FindAll();
                     var petWeights = new List<PetWeight>();
@@ -72,14 +73,12 @@ namespace RasLiteDB {
                     string responseJson = System.Text.Json.JsonSerializer.Serialize(petWeights);
                     response.ContentType = "application/json";
                     response.StatusCode = 200;
-                    
-                    using (var streamWriter = new StreamWriter(response.OutputStream))
-                    {
-                        streamWriter.Write(responseJson);
-                    }
+
+                    await using var streamWriter = new StreamWriter(response.OutputStream);
+                    await streamWriter.WriteAsync(responseJson);
                 } else if (request.HttpMethod == "OPTIONS") {
                     Console.WriteLine("Got an OPTIONS call");
-                    AddCORSHeaders(response);
+                    AddCorsHeaders(response);
 
                     response.StatusCode = 200;
                     response.Close();
@@ -94,8 +93,8 @@ namespace RasLiteDB {
                 if (request.HttpMethod != "OPTIONS") {
                     try {
                         response.ContentLength64 = buffer.Length;
-                        System.IO.Stream output = response.OutputStream;
-                        output.Write(buffer, 0, buffer.Length);
+                        Stream output = response.OutputStream;
+                        await output.WriteAsync(buffer);
 
                         // You must close the output stream.
                         output.Close();
@@ -109,7 +108,7 @@ namespace RasLiteDB {
             }
         }
 
-        private void AddCORSHeaders(HttpListenerResponse response) {
+        private static void AddCorsHeaders(HttpListenerResponse response) {
             response.AddHeader("Access-Control-Allow-Origin", "*");
             response.AddHeader("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
             response.AddHeader("Access-Control-Allow-Headers", "Content-Type, Accept");
