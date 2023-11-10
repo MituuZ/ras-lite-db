@@ -8,10 +8,12 @@ namespace RasLiteDB {
     {
         private readonly string _raspIp;
         private readonly LiteDatabase _db;
+        private bool _running;
 
         public SimpleHttpServer(string raspIp, LiteDatabase db) {
             _raspIp = raspIp;
             _db = db;
+            _running = true;
         }
 
         public async Task StartListeningAsync()
@@ -24,7 +26,7 @@ namespace RasLiteDB {
             listener.Start();
             Console.WriteLine("Listening...");
 
-            while (true)
+            while (_running)
             {
                 HttpListenerContext context = await listener.GetContextAsync();
                 HttpListenerRequest request = context.Request;
@@ -39,7 +41,17 @@ namespace RasLiteDB {
                 switch (request.HttpMethod)
                 {
                     case "POST":
-                        HandlePostRequest(response, collection, jsonBody, responseStringBuilder);
+                        if (context.Request.Url != null && context.Request.Url.AbsolutePath == "/stop")
+                        {
+                            _running = false;
+                            Console.WriteLine("Shutting down the service.");
+                            responseStringBuilder.Append("Shutting down the service");
+                            response.StatusCode = 200;
+                        }
+                        else
+                        {
+                            HandlePostRequest(response, collection, jsonBody, responseStringBuilder);
+                        }
                         break;
                     case "GET":
                         await HandleGetRequest(response, collection);
@@ -75,7 +87,7 @@ namespace RasLiteDB {
             }
         }
 
-        private async Task HandleGetRequest(HttpListenerResponse response, ILiteCollection<PetWeight> collection)
+        private static async Task HandleGetRequest(HttpListenerResponse response, ILiteCollection<PetWeight> collection)
         {
             Console.WriteLine("Got a get request, returning PetWeights");
             AddCorsHeaders(response);
@@ -91,7 +103,7 @@ namespace RasLiteDB {
             await streamWriter.WriteAsync(responseJson);
         }
         
-        private void HandleOptionsRequest(HttpListenerResponse response)
+        private static void HandleOptionsRequest(HttpListenerResponse response)
         {
             Console.WriteLine("Got an OPTIONS call");
             AddCorsHeaders(response);
@@ -100,7 +112,7 @@ namespace RasLiteDB {
             response.Close();
         }
 
-        private void HandlePostRequest(HttpListenerResponse response, ILiteCollection<PetWeight> collection, string jsonBody, StringBuilder responseStringBuilder)
+        private static void HandlePostRequest(HttpListenerResponse response, ILiteCollection<PetWeight> collection, string jsonBody, StringBuilder responseStringBuilder)
         {
             AddCorsHeaders(response);
             List<PetWeight>? petWeights = null;
