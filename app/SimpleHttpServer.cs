@@ -1,21 +1,20 @@
 using System.Net;
 using System.Text;
-using System.Text.Json;
-using Models;
 using LiteDB;
+using Models;
 
-namespace HttpServer {
+namespace RasLiteDB {
     public class SimpleHttpServer
     {
-        string raspIp;
-        LiteDatabase db;
+        private readonly string _raspIp;
+        private readonly LiteDatabase _db;
 
         public async Task StartListeningAsync()
         {
-            HttpListener listener = new HttpListener();
+            var listener = new HttpListener();
 
             // Add the prefixes.
-            listener.Prefixes.Add($"http://{raspIp}:5000/");
+            listener.Prefixes.Add($"http://{_raspIp}:5000/");
 
             listener.Start();
             Console.WriteLine("Listening...");
@@ -24,13 +23,13 @@ namespace HttpServer {
             {
                 HttpListenerContext context = await listener.GetContextAsync();
                 HttpListenerRequest request = context.Request;
-                string responseString = "<html><body>Hello World!</body></html>";
+                var responseString = "<html><body>Hello World!</body></html>";
 
-                System.IO.Stream body = request.InputStream;
-                System.IO.StreamReader reader = new System.IO.StreamReader(body, request.ContentEncoding);
+                Stream body = request.InputStream;
+                var reader = new StreamReader(body, request.ContentEncoding);
                 string jsonBody = reader.ReadToEnd();
                 
-                var collection = db.GetCollection<PetWeight>("petweights");
+                var collection = _db.GetCollection<PetWeight>("petweights");
 
                 HttpListenerResponse response = context.Response;
 
@@ -41,17 +40,18 @@ namespace HttpServer {
                     if (petWeights != null) {
                         responseString = "<html><body>";
 
-                        foreach (var petWeight in petWeights) {
-                            if (petWeight != null) {
-                                Console.WriteLine($"Got a request for db insert:");
-                                Console.WriteLine($"Name: {petWeight.Name}");
-                                Console.WriteLine($"Weight: {petWeight.Weight}");
-                                Console.WriteLine($"Date: {petWeight.Date}");
-                                
-                                collection.Insert(petWeight);
+                        foreach (var petWeight in petWeights)
+                        {
+                            if (petWeight is not { Weight: > 0 }) continue;
+                            
+                            Console.WriteLine("Got a request for db insert:");
+                            Console.WriteLine($"Name: {petWeight.Name}");
+                            Console.WriteLine($"Weight: {petWeight.Weight}");
+                            Console.WriteLine($"Date: {petWeight.Date}");
+                            
+                            collection.Insert(petWeight);
 
-                                responseString += $"<html><body>Inserted {petWeight.Name} to the database</body></html>";
-                            }
+                            responseString += $"<html><body>Inserted {petWeight.Name} to the database</body></html>";
                         }
 
                         responseString += "</body></html>";
@@ -69,7 +69,7 @@ namespace HttpServer {
                         petWeights.Add(petWeight);
                     }
 
-                    var responseJson = System.Text.Json.JsonSerializer.Serialize(petWeights);
+                    string responseJson = System.Text.Json.JsonSerializer.Serialize(petWeights);
                     response.ContentType = "application/json";
                     response.StatusCode = 200;
                     
@@ -102,6 +102,8 @@ namespace HttpServer {
                         Console.WriteLine("Writing a response out");
                     } catch (ObjectDisposedException) {
                         Console.WriteLine("Failed to write a response!");
+                    } catch (InvalidOperationException) {
+                        Console.WriteLine("Failed to write a response!");
                     }
                 }
             }
@@ -113,9 +115,9 @@ namespace HttpServer {
             response.AddHeader("Access-Control-Allow-Headers", "Content-Type, Accept");
         }
 
-        public SimpleHttpServer(string _raspIp, LiteDatabase _db) {
-            this.raspIp = _raspIp;
-            this.db = _db;
+        public SimpleHttpServer(string raspIp, LiteDatabase db) {
+            _raspIp = raspIp;
+            _db = db;
         }
     }
 }
