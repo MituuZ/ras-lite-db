@@ -5,3 +5,5 @@ app/appsettings.Development.json
 README.me.md
 app/publish/
 app/data/
+.git
+.idea
