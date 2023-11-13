@@ -1,14 +1,14 @@
-namespace Models {
-    class PetWeight {
+namespace RasLiteDB.Models {
+    internal class PetWeight {
         public int Id { get; set; }
-        public String Name { get; set; }
-        public Double Weight { get; set; }
+        public string Name { get; set; }
+        public double Weight { get; set; }
         public DateTime Date { get; set; }
 
-        public PetWeight(String Name, Double Weight, DateTime Date) {
-            this.Name = Name;
-            this.Weight = Weight;
-            this.Date = Date;
+        public PetWeight(string name, double weight, DateTime date) {
+            Name = name;
+            Weight = weight;
+            Date = date;
         }
     }
 }
