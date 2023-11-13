@@ -69,7 +69,7 @@ namespace RasLiteDB {
                 byte[] buffer = Encoding.UTF8.GetBytes(responseStringBuilder.ToString());
 
                 // Get a response stream and write the response to it.
-                if (request.HttpMethod == "OPTIONS") continue;
+                if (request.HttpMethod is "OPTIONS" or "GET") continue;
                 
                 try {
                     response.ContentLength64 = buffer.Length;
